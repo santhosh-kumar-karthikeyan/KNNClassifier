@@ -1,0 +1,20 @@
+[project]
+name = "knn"
+version = "0.1.0"
+description = "An implementation of KNN with weighted and unweighted voting, 3 distance metrics and the capability of getting input from standard input or from a dataset."
+authors = [
+    {name = "Santhosh",email = "santhoshkumarkarthikeyan5@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "scikit-learn (>=1.7.1,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "knn", from = "src"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
