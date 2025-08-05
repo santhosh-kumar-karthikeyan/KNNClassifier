@@ -3,5 +3,5 @@ from abc import ABC, abstractmethod
 
 class DistanceStrategy(ABC):
     @abstractmethod
-    def computeDistance(self,a: pd.DataFrame,b: pd.Series) -> pd.DataFrame:
+    def computeDistance(self,df: pd.DataFrame,s: pd.Series) -> pd.Series:
         raise NotImplementedError()
