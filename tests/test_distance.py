@@ -19,6 +19,7 @@ def test_euclidean():
     actual_s: Series = euclidean.computeDistance(df, s)
     try:
         pd.testing.assert_series_equal(expected_s, actual_s, atol=1e-2)
+        print("Euclidean distance intact.")
     except AssertionError as e:
         print(f"Expected output:\n{expected_s}")
         print(f"Actual output:\n{actual_s}")
@@ -31,6 +32,7 @@ def test_manhattan():
     actual_s: Series = manhattan.computeDistance(df, s)
     try:
         pd.testing.assert_series_equal(expected_s, actual_s)
+        print("Manhattan distance intact.")
     except AssertionError as e:
         print(f"Expected output:\n{expected_s}")
         print(f"Actual output:\n{actual_s}")
