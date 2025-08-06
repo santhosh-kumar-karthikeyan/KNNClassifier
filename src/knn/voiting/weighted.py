@@ -7,7 +7,7 @@ class WeightedVoting(VotingStrategy):
     Args:
         VotingStrategy (VotingStrategy): Concrete class of VotinGStrategy class that provides the impelementation of getRank() method.
     """
-    def getLabel(self, distance: Series, labels: Series, k: int) -> str:
+    def getLabel(self, distance: Series, labels: Series, k: int) -> str | int:
         """Method description
 
         Args:
@@ -16,5 +16,11 @@ class WeightedVoting(VotingStrategy):
             k (int) : Number of points to be considered for voting
 
         Returns:
-            str: Returms tje ;ane; of the target datapoint
+            str | int: Returms the label of the target datapoint
         """
+        rank: Series = distance.rank(method="min")
+        top_k_indices = rank[:k].index.to_numpy()
+        weight: Series = distance[top_k_indices].pow(-2)
+        cumulative_weigths: Series = weight.groupby(labels).apply(sum)
+        target_label: str | int = cumulative_weigths.idxmax()
+        return target_label

@@ -18,7 +18,7 @@ class UnweightedVoting(VotingStrategy):
             k (int): The number of entries to be considered for label estimation
 
         Returns:
-            str: A label based on the voting strategy
+            str | int: A label based on the voting strategy
         """
         ranks: Series = distance.rank(method = "min")
         top_k_indices: ndarray = ranks[:k].index.to_numpy()
