@@ -1,7 +1,7 @@
 from pandas import DataFrame, Series
 from .strategy import DistanceStrategy
-from numpy import abs
+from numpy import max, abs
 
-class ManhattanDistance(DistanceStrategy):
+class ChebyshevDistance(DistanceStrategy):
     def computeDistance(self, df: DataFrame, s: Series) -> Series:
-        return (abs(df - s)).sum(axis=1)
+        return max(abs(df - s))
