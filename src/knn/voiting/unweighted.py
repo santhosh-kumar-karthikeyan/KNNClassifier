@@ -1,4 +1,5 @@
 from pandas import Series
+from numpy import ndarray,array
 from .strategy import VotingStrategy
 
 
@@ -8,13 +9,19 @@ class UnweightedVoting(VotingStrategy):
     UnweightedVoting approach that doesn't consider the magnitude of distance, just the order of distance
     """
 
-    def getRank(self, distance: Series) -> Series:
-        """Method Description
+    def getLabel(self, distance: Series, labels: Series, k: int) -> str | int:
+        """Method description
 
         Args:
-            distance (Series): The distance between a target point and the whole dataframe, represented as series with the index being the row numbers
+            distance (Series): The distance between a dataframe and the target point, any distance metric followed
+            labels (Series): The labels of every point in the dataframe, respectively matched with distance through index
+            k (int): The number of entries to be considered for label estimation
 
         Returns:
-            Series: A series with the index being the row number and the rank being ranked using the min method for tie resolution. i.e if the distances are 15,16,16,17 then the rankss would be 1,2,2,3
+            str: A label based on the voting strategy
         """
-        return distance.rank(method="min")
+        ranks: Series = distance.rank(method = "min")
+        top_k_indices: ndarray = ranks[:k].index.to_numpy()
+        top_k_labels : Series = labels[top_k_indices]
+        target_label: int = top_k_labels.value_counts()[0]
+        return target_label

@@ -10,9 +10,9 @@ class VotingStrategy(ABC):
     """
 
     @abstractmethod
-    def getRank(self, distance: Series) -> Series:
+    def getLabel(self, distance: Series, labels: Series, k: int) -> str | int:
         """
         Function description:
-        Method that based on the approach, will calculate the rank for a series of distance provided.
+        Method that based on the approach, will provide the label of a target point from a dataframe given the distance between the class of points and the target point.
         """
         raise NotImplementedError()
