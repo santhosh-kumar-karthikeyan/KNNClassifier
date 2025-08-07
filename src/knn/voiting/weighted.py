@@ -1,5 +1,7 @@
 from pandas import Series
+from numpy import sum
 from .strategy import VotingStrategy
+
 
 class WeightedVoting(VotingStrategy):
     """Class description
@@ -7,6 +9,7 @@ class WeightedVoting(VotingStrategy):
     Args:
         VotingStrategy (VotingStrategy): Concrete class of VotinGStrategy class that provides the impelementation of getRank() method.
     """
+
     def getLabel(self, distance: Series, labels: Series, k: int) -> str | int:
         """Method description
 
