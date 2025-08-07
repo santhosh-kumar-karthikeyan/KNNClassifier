@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Self
 from sklearn.metrics import confusion_matrix
 from numpy import ndarray
+
 class KNNClassifer:
     def __init__(self):
         self.confusion_matrix: ndarray
@@ -27,7 +28,7 @@ class KNNClassifer:
     def classify(self, test: pd.DataFrame):
         if self.df is None:
             return
-        distance : pd.DataFrame = test.apply(lambda test_row: self.distance_strategy.computeDistance(self.df,test_row))
+        distance : pd.DataFrame = test.apply(lambda test_row: self.distance_strategy.computeDistance(self.df,test_row), axis = 1)
         label_frame: pd.Series = distance.apply(lambda distance_row: self.voter.getLabel(distance_row,self.labels,self.k))
-        print(label_frame)
+        print(label_frame.value_counts())
         

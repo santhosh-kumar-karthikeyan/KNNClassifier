@@ -21,8 +21,7 @@ class WeightedVoting(VotingStrategy):
         Returns:
             str | int: Returms the label of the target datapoint
         """
-        rank: Series = distance.rank(method="min")
-        top_k_indices = rank[:k].index.to_numpy()
+        top_k_indices = distance.nsmallest(k).index.to_numpy()
         weight: Series = distance[top_k_indices].pow(-2)
         cumulative_weigths: Series = weight.groupby(labels).apply(sum)
         target_label: str | int = cumulative_weigths.idxmax()
