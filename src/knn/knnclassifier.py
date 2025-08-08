@@ -3,12 +3,11 @@ from .distance import DistanceStrategy
 from .voiting import VotingStrategy
 import pandas as pd
 from typing import Self
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay, classification_report
 from numpy import ndarray
 
 class KNNClassifer:
     def __init__(self):
-        self.confusion_matrix: ndarray
         pass
     def set_k(self,k: int) -> Self:
         self.k = k
@@ -20,15 +19,21 @@ class KNNClassifer:
         self.voter = voter
         return self
     def set_dataframe(self,df: pd.DataFrame) -> Self:
-        self.df = df
+        self.X_train = df
         return self
     def set_labels(self,labels: pd.Series) -> Self:
-        self.labels = labels
+        self.y_train = labels
         return self
-    def classify(self, test: pd.DataFrame):
-        if self.df is None:
+    def set_target_name(self,name: str) -> Self:
+        self.target_name = name
+        return self
+    def classify(self, X_test: pd.DataFrame, y_test: pd.DataFrame ):
+        if self.X_train is None:
             return
-        distance : pd.DataFrame = test.apply(lambda test_row: self.distance_strategy.computeDistance(self.df,test_row), axis = 1)
-        label_frame: pd.Series = distance.apply(lambda distance_row: self.voter.getLabel(distance_row,self.labels,self.k))
-        print(label_frame.value_counts())
-        
+        distance : pd.DataFrame = X_test.apply(lambda test_row: self.distance_strategy.computeDistance(self.X_train,test_row), axis = 1)
+        y_pred: pd.Series = distance.apply(lambda distance_row: self.voter.getLabel(distance_row,self.y_train,self.k), axis = 1)
+        y_pred.name = "Predicted"
+        X_test = pd.concat([X_test,y_test, y_pred], axis = 1)
+        self.cm =  confusion_matrix(y_test,y_pred)
+        print(self.cm)
+        print(classification_report(y_true=y_test, y_pred=y_pred))
