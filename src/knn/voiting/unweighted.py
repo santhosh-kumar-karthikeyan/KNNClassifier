@@ -20,8 +20,7 @@ class UnweightedVoting(VotingStrategy):
         Returns:
             str | int: A label based on the voting strategy
         """
-        ranks: Series = distance.rank(method="min")
-        top_k_indices: ndarray = ranks[:k].index.to_numpy()
+        top_k_indices: ndarray = distance.nsmallest(k).index.to_numpy()
         top_k_labels: Series = labels[top_k_indices]
         target_label: int = top_k_labels.mode()[0]
         return target_label
