@@ -3,7 +3,7 @@ from .distance import DistanceStrategy
 from .voiting import VotingStrategy
 import pandas as pd
 from typing import Self
-from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay, classification_report
+from sklearn.metrics import confusion_matrix, classification_report
 from numpy import ndarray
 
 class KNNClassifer:
@@ -18,10 +18,10 @@ class KNNClassifer:
     def set_voter(self, voter : VotingStrategy) -> Self:
         self.voter = voter
         return self
-    def set_dataframe(self,df: pd.DataFrame) -> Self:
+    def set_X_train(self,df: pd.DataFrame) -> Self:
         self.X_train = df
         return self
-    def set_labels(self,labels: pd.Series) -> Self:
+    def set_y_train(self,labels: pd.Series) -> Self:
         self.y_train = labels
         return self
     def set_target_name(self,name: str) -> Self:

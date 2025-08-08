@@ -15,5 +15,5 @@ y_test = y_test.reset_index(drop = True)
 k:int = 3
 def test_classifier():
     knn: KNNClassifer = KNNClassifer()
-    knn.set_distance_strategy(ManhattanDistance()).set_k(k).set_labels(y_train).set_voter(WeightedVoting()).set_dataframe(X_train)
+    knn.set_distance_strategy(ManhattanDistance()).set_k(k).set_y_train(y_train).set_voter(WeightedVoting()).set_X_train(X_train)
     knn.classify(X_test,y_test)
