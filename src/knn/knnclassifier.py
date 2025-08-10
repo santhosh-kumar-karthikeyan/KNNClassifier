@@ -1,6 +1,6 @@
 from typing import Any
 from .distance import DistanceStrategy
-from .voiting import VotingStrategy
+from .voting import VotingStrategy
 import pandas as pd
 from typing import Self
 from sklearn.metrics import confusion_matrix, classification_report
@@ -8,7 +8,7 @@ from numpy import ndarray
 
 class KNNClassifer:
     def __init__(self):
-        pass
+        self.k: int = 3
     def set_k(self,k: int) -> Self:
         self.k = k
         return self
