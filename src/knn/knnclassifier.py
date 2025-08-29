@@ -1,14 +1,14 @@
 from typing import Any
 from .distance import DistanceStrategy
-from .voiting import VotingStrategy
+from .voting import VotingStrategy
 import pandas as pd
 from typing import Self
 from sklearn.metrics import confusion_matrix, classification_report
 from numpy import ndarray
-
+from sklearn.model_selection import train_test_split
 class KNNClassifer:
     def __init__(self):
-        pass
+        self.k: int = 3
     def set_k(self,k: int) -> Self:
         self.k = k
         return self
@@ -27,6 +27,8 @@ class KNNClassifer:
     def set_target_name(self,name: str) -> Self:
         self.target_name = name
         return self
+    def split_df(self, dataframe: pd.DataFrame, target_label: str):
+        return train_test_split()
     def classify(self, X_test: pd.DataFrame, y_test: pd.DataFrame ):
         if self.X_train is None:
             return
@@ -35,5 +37,5 @@ class KNNClassifer:
         y_pred.name = "Predicted"
         X_test = pd.concat([X_test,y_test, y_pred], axis = 1)
         self.cm =  confusion_matrix(y_test,y_pred)
-        print(self.cm)
-        print(classification_report(y_true=y_test, y_pred=y_pred))
+        self.report = classification_report(y_true=y_test, y_pred=y_pred)
+        return y_pred

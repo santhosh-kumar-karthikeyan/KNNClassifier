@@ -1,6 +1,6 @@
 from knn.knnclassifier import KNNClassifer
 from knn.distance import DistanceStrategy,EuclideanDistance, ManhattanDistance, ChebyshevDistance
-from knn.voiting import VotingStrategy, UnweightedVoting, WeightedVoting
+from knn.voting import VotingStrategy, UnweightedVoting, WeightedVoting
 import pandas as pd
 from sklearn.model_selection import train_test_split
 

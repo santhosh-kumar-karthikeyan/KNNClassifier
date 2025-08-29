@@ -1,4 +1,4 @@
-from knn.voiting import VotingStrategy, UnweightedVoting, WeightedVoting
+from knn.voting import VotingStrategy, UnweightedVoting, WeightedVoting
 from pandas import Series
 
 distance: Series = Series([0.2, 0.4, 0.5, 0.8, 0.9, 1, 0.95, 1.92])
