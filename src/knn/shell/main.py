@@ -39,7 +39,7 @@ class App(Cmd):
             Settable("dataset", self._path_type, "Path to the dataset to be used for classification", self)
         )
         self.add_settable(
-            Settable("reader", str, "Type of reading to be done for the dataset", self, choices=["inline", "file"])
+            Settable("reader", str, "Type of reading to be done for the dataset", self, choices=["stdin", "file"], onchange_cb=self._onchange_reader)
         )
     def _test_rate_type(self, val: float):
         if not 0 <= val <= 1:
@@ -71,8 +71,13 @@ class App(Cmd):
     
     def _onchange_distance(self,_param_name,old,new) -> None:
         self.knn.set_distance_strategy(self.distance_map(new))
+    
+    def _onchange_reader(self, _param_name, _old, new) -> None:
+        """Callback when reader type changes"""
+        self.reader = new
         
     def do_classify(self,args):
+        "Classifies the configured dataset with the configured meta-parameters"
         if self.distance is None:
             self.distance = "euclidean"
             self.pwarning("Distance metric not configured. Defaulting to Euclidean distance")
@@ -88,24 +93,73 @@ class App(Cmd):
         if self.dataset is None :
             self.dataset = "./diabetes.csv"
             self.pwarning("Dataset not configured. Defaulting to diabetes dataset.")
+        
+        # Read training data
         if self.reader == "file":
             df = self.data_handler.read_from_path(self.dataset)
         else:
             df = self.data_handler.read_from_stdin()
+        
         features = list(df.columns)
         target = self.select(opts = features,prompt= "Choose a target column: ")
         self.poutput(f"{target} selected as target column")
         features.remove(target)
         features = questionary.checkbox("Select the features needed to be computed", choices = features).ask()
         self.poutput(f"Features selected for training: {features}")
+        
+        # Set up the classifier
         self.knn.set_distance_strategy(self.distance_map(self.distance))
         self.knn.set_voter(self.voter_map(self.voter))
-        self.data_handler.split_df(df = df, features=features, target_label=target, test_size= self.test_rate)
-        self.knn.set_X_train(self.data_handler.X_train)
-        self.knn.set_y_train(self.data_handler.y_train)
-        self.knn.classify(self.data_handler.X_test,self.data_handler.y_test)
-        self.poutput(self.knn.cm)
-        self.poutput(self.knn.report)
+        
+        # Handle different reading modes
+        if self.reader == "stdin":
+            # For stdin mode, train on all data and predict on user input
+            X = df[features]
+            y = df[target]
+            self.knn.set_X_train(X)
+            self.knn.set_y_train(y)
+            
+            # Get test data from user input
+            self.poutput("Now enter test data for prediction:")
+            test_data = self.data_handler.read_test_data_from_stdin(features)
+            
+            if not test_data.empty:
+                # Predict using the trained model
+                prediction = self.knn.predict(test_data)
+                self.poutput(f"Predicted label: {prediction.iloc[0]}")
+            else:
+                self.poutput("No test data provided.")
+        else:
+            # For file mode, split data and show classification report
+            self.data_handler.split_df(df = df, features=features, target_label=target, test_size= self.test_rate)
+            self.knn.set_X_train(self.data_handler.X_train)
+            self.knn.set_y_train(self.data_handler.y_train)
+            self.knn.classify(self.data_handler.X_test,self.data_handler.y_test)
+            self.poutput(self.knn.cm)
+            self.poutput(self.knn.report)
+    
+    def do_predict(self, args):
+        "Predict a single instance using trained model (for stdin input mode)"
+        if self.reader == "file":
+            self.poutput("This command is only available when reader is set to 'stdin'")
+            return
+            
+        if not hasattr(self.knn, 'X_train') or self.knn.X_train is None:
+            self.poutput("Model not trained. Please run 'classify' first.")
+            return
+            
+        # Get the features from the trained model
+        features = list(self.knn.X_train.columns)
+        
+        # Get test data from user input
+        test_data = self.data_handler.read_test_data_from_stdin(features)
+        
+        if not test_data.empty:
+            # Predict using the trained model
+            prediction = self.knn.predict(test_data)
+            self.poutput(f"Predicted label: {prediction.iloc[0]}")
+        else:
+            self.poutput("No test data provided.")
 def main():
     app = App()
     sys.exit(app.cmdloop())

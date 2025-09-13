@@ -39,3 +39,12 @@ class KNNClassifer:
         self.cm =  confusion_matrix(y_test,y_pred)
         self.report = classification_report(y_true=y_test, y_pred=y_pred)
         return y_pred
+    
+    def predict(self, X_test: pd.DataFrame) -> pd.Series:
+        """Predict labels for test data without requiring ground truth labels"""
+        if self.X_train is None:
+            raise ValueError("Model must be trained first (X_train not set)")
+        distance : pd.DataFrame = X_test.apply(lambda test_row: self.distance_strategy.computeDistance(self.X_train,test_row), axis = 1)
+        y_pred: pd.Series = distance.apply(lambda distance_row: self.voter.getLabel(distance_row,self.y_train,self.k), axis = 1)
+        y_pred.name = "Predicted"
+        return y_pred
