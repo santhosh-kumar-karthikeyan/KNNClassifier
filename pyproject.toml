@@ -1,28 +1,26 @@
-[project]
+[tool.poetry]
 name = "knn"
 version = "0.1.0"
 description = "An implementation of KNN with weighted and unweighted voting, 3 distance metrics and the capability of getting input from standard input or from a dataset."
-authors = [
-    {name = "Santhosh",email = "santhoshkumarkarthikeyan5@gmail.com"}
-]
+authors = ["Santhosh <santhoshkumarkarthikeyan5@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "scikit-learn (>=1.7.1,<2.0.0)",
-    "pandas (>=2.3.1,<3.0.0)",
-    "numpy (>=2.3.2,<3.0.0)",
-    "click==8.1.7",
-    "click-repl==0.3.0",
-    "cement (>=3.0.14,<4.0.0)",
-    "cmd2 (>=2.7.0,<3.0.0)",
-    "prompt-toolkit (>=3.0.51,<4.0.0)",
-    "argcomplete (>=3.6.2,<4.0.0)",
-    "questionary (>=2.1.0,<3.0.0)"
-]
-
-[tool.poetry]
 packages = [{include = "knn", from = "src"}]
 
+[tool.poetry.dependencies]
+python = ">=3.12"
+scikit-learn = ">=1.7.1,<2.0.0"
+pandas = ">=2.3.1,<3.0.0"
+numpy = ">=2.3.2,<3.0.0"
+click = "8.1.7"
+click-repl = "0.3.0"
+cement = ">=3.0.14,<4.0.0"
+cmd2 = ">=2.7.0,<3.0.0"
+prompt-toolkit = ">=3.0.51,<4.0.0"
+argcomplete = ">=3.6.2,<4.0.0"
+questionary = ">=2.1.0,<3.0.0"
+
+[tool.poetry.scripts]
+shell = "knn.shell.main:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -30,6 +28,3 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
-
-[tool.poetry.scripts]
-shell = "src.knn.shell.main:main"

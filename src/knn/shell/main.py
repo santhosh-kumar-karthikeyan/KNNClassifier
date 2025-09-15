@@ -41,6 +41,49 @@ class App(Cmd):
         self.add_settable(
             Settable("reader", str, "Type of reading to be done for the dataset", self, choices=["stdin", "file"], onchange_cb=self._onchange_reader)
         )
+    
+    def do_help_stdin(self, args):
+        """Show detailed help for stdin mode usage"""
+        self.poutput("=== STDIN Mode Usage Guide ===\n")
+        self.poutput("STDIN mode allows you to input training data interactively and get predictions.")
+        self.poutput("No need to prepare CSV files beforehand!\n")
+        
+        self.poutput("📋 Step-by-step process:")
+        self.poutput("1. Set reader to stdin: set reader stdin")
+        self.poutput("2. Configure parameters (optional):")
+        self.poutput("   - set k <number>          # Number of neighbors (default: 3)")
+        self.poutput("   - set distance <metric>   # euclidean, manhattan, or chebyshev")
+        self.poutput("   - set voter <strategy>    # weighted or unweighted")
+        self.poutput("3. Run classify command: classify")
+        self.poutput("4. Enter training data in CSV format when prompted")
+        self.poutput("5. Select target column and features")
+        self.poutput("6. Enter test data for prediction")
+        self.poutput("7. Use 'predict' command for additional predictions\n")
+        
+        self.poutput("💡 CSV Input Format:")
+        self.poutput("Enter data line by line, starting with headers:")
+        self.poutput("feature1,feature2,target")
+        self.poutput("1.2,3.4,class_a")
+        self.poutput("2.1,4.3,class_b")
+        self.poutput("END")
+        self.poutput("\n✨ Type 'END' when finished entering data")
+        
+    def do_help_modes(self, args):
+        """Show comparison between file and stdin modes"""
+        self.poutput("=== KNN Classifier Modes ===\n")
+        self.poutput("📁 FILE MODE (reader=file):")
+        self.poutput("- Load data from CSV files")
+        self.poutput("- Automatically split into train/test sets")
+        self.poutput("- Shows confusion matrix and classification report")
+        self.poutput("- Best for: Model evaluation and testing\n")
+        
+        self.poutput("⌨️  STDIN MODE (reader=stdin):")
+        self.poutput("- Enter training data interactively")
+        self.poutput("- Uses all data for training")
+        self.poutput("- Prompts for test data input")
+        self.poutput("- Shows single predictions")
+        self.poutput("- Best for: Real-time predictions and quick testing")
+        self.poutput("- Use 'predict' command for additional predictions")
     def _test_rate_type(self, val: float):
         if not 0 <= val <= 1:
             raise ValueError("Value must be a number between 0 and 1")
@@ -75,6 +118,13 @@ class App(Cmd):
     def _onchange_reader(self, _param_name, _old, new) -> None:
         """Callback when reader type changes"""
         self.reader = new
+        if new == "stdin":
+            self.poutput("📝 Reader set to STDIN mode.")
+            self.poutput("   You will be prompted to enter training data during classification.")
+            self.poutput("   Type 'help_stdin' for detailed usage instructions.")
+        else:
+            self.poutput("📁 Reader set to FILE mode.")
+            self.poutput("   Configure 'dataset' parameter to specify the CSV file path.")
         
     def do_classify(self,args):
         "Classifies the configured dataset with the configured meta-parameters"
@@ -87,24 +137,41 @@ class App(Cmd):
         if self.k is None:
             self.k = 3
             self.pwarning("Number of neighbours not configured. Defaulting to 3")
-        if self.test_rate is None:
-            self.test_rate = 0.3
-            self.pwarning("Rate of dataset to be splitted for testing is not configured. Defaulting to 0.3")
-        if self.dataset is None :
-            self.dataset = "./diabetes.csv"
-            self.pwarning("Dataset not configured. Defaulting to diabetes dataset.")
+        
+        # Handle reader mode configuration
+        if self.reader == "stdin":
+            self.poutput("=== STDIN Mode Active ===")
+            self.poutput("You will be prompted to enter training data in CSV format,")
+            self.poutput("then select target and features, and finally provide test data for prediction.")
+        else:
+            if self.test_rate is None:
+                self.test_rate = 0.3
+                self.pwarning("Rate of dataset to be splitted for testing is not configured. Defaulting to 0.3")
+            if self.dataset is None :
+                self.dataset = "./diabetes.csv"
+                self.pwarning("Dataset not configured. Defaulting to diabetes dataset.")
         
         # Read training data
         if self.reader == "file":
             df = self.data_handler.read_from_path(self.dataset)
         else:
             df = self.data_handler.read_from_stdin()
+            
+        # Check if data was successfully loaded
+        if df.empty:
+            self.poutput("No data loaded. Classification cannot proceed.")
+            return
         
         features = list(df.columns)
         target = self.select(opts = features,prompt= "Choose a target column: ")
-        self.poutput(f"{target} selected as target column")
+        self.poutput(f"'{target}' selected as target column")
         features.remove(target)
         features = questionary.checkbox("Select the features needed to be computed", choices = features).ask()
+        
+        if not features:
+            self.poutput("No features selected. Classification cannot proceed.")
+            return
+            
         self.poutput(f"Features selected for training: {features}")
         
         # Set up the classifier
@@ -119,14 +186,16 @@ class App(Cmd):
             self.knn.set_X_train(X)
             self.knn.set_y_train(y)
             
+            self.poutput(f"Model trained with {len(X)} samples using {len(features)} features.")
+            
             # Get test data from user input
-            self.poutput("Now enter test data for prediction:")
             test_data = self.data_handler.read_test_data_from_stdin(features)
             
             if not test_data.empty:
                 # Predict using the trained model
                 prediction = self.knn.predict(test_data)
-                self.poutput(f"Predicted label: {prediction.iloc[0]}")
+                self.poutput(f"\n🎯 Predicted label: {prediction.iloc[0]}")
+                self.poutput("\nYou can use the 'predict' command to make additional predictions.")
             else:
                 self.poutput("No test data provided.")
         else:
@@ -141,15 +210,18 @@ class App(Cmd):
     def do_predict(self, args):
         "Predict a single instance using trained model (for stdin input mode)"
         if self.reader == "file":
-            self.poutput("This command is only available when reader is set to 'stdin'")
+            self.poutput("❌ This command is only available when reader is set to 'stdin'")
+            self.poutput("   Current reader mode: file")
+            self.poutput("   To use prediction mode: set reader stdin")
             return
             
         if not hasattr(self.knn, 'X_train') or self.knn.X_train is None:
-            self.poutput("Model not trained. Please run 'classify' first.")
+            self.poutput("❌ Model not trained. Please run 'classify' first to train the model.")
             return
             
         # Get the features from the trained model
         features = list(self.knn.X_train.columns)
+        self.poutput("=== Additional Prediction ===")
         
         # Get test data from user input
         test_data = self.data_handler.read_test_data_from_stdin(features)
@@ -157,7 +229,7 @@ class App(Cmd):
         if not test_data.empty:
             # Predict using the trained model
             prediction = self.knn.predict(test_data)
-            self.poutput(f"Predicted label: {prediction.iloc[0]}")
+            self.poutput(f"\n🎯 Predicted label: {prediction.iloc[0]}")
         else:
             self.poutput("No test data provided.")
 def main():
