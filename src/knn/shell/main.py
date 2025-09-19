@@ -44,46 +44,22 @@ class App(Cmd):
     
     def do_help_stdin(self, args):
         """Show detailed help for stdin mode usage"""
-        self.poutput("=== STDIN Mode Usage Guide ===\n")
-        self.poutput("STDIN mode allows you to input training data interactively and get predictions.")
-        self.poutput("No need to prepare CSV files beforehand!\n")
-        
-        self.poutput("📋 Step-by-step process:")
-        self.poutput("1. Set reader to stdin: set reader stdin")
-        self.poutput("2. Configure parameters (optional):")
-        self.poutput("   - set k <number>          # Number of neighbors (default: 3)")
-        self.poutput("   - set distance <metric>   # euclidean, manhattan, or chebyshev")
-        self.poutput("   - set voter <strategy>    # weighted or unweighted")
-        self.poutput("3. Run classify command: classify")
-        self.poutput("4. Enter training data in CSV format when prompted")
-        self.poutput("5. Select target column and features")
-        self.poutput("6. Enter test data for prediction")
-        self.poutput("7. Use 'predict' command for additional predictions\n")
-        
-        self.poutput("💡 CSV Input Format:")
+        self.poutput("CSV Input Format:")
         self.poutput("Enter data line by line, starting with headers:")
         self.poutput("feature1,feature2,target")
         self.poutput("1.2,3.4,class_a")
         self.poutput("2.1,4.3,class_b")
         self.poutput("END")
-        self.poutput("\n✨ Type 'END' when finished entering data")
+        self.poutput("\nType 'END' when finished entering data")
         
     def do_help_modes(self, args):
         """Show comparison between file and stdin modes"""
         self.poutput("=== KNN Classifier Modes ===\n")
-        self.poutput("📁 FILE MODE (reader=file):")
-        self.poutput("- Load data from CSV files")
-        self.poutput("- Automatically split into train/test sets")
-        self.poutput("- Shows confusion matrix and classification report")
-        self.poutput("- Best for: Model evaluation and testing\n")
+        self.poutput("FILE MODE (reader=file):")
         
-        self.poutput("⌨️  STDIN MODE (reader=stdin):")
-        self.poutput("- Enter training data interactively")
-        self.poutput("- Uses all data for training")
-        self.poutput("- Prompts for test data input")
-        self.poutput("- Shows single predictions")
-        self.poutput("- Best for: Real-time predictions and quick testing")
-        self.poutput("- Use 'predict' command for additional predictions")
+        self.poutput("⌨ STDIN MODE (reader=stdin):")
+        self.poutput("- Use 'predict' command for additional predictions\n")
+        
     def _test_rate_type(self, val: float):
         if not 0 <= val <= 1:
             raise ValueError("Value must be a number between 0 and 1")
@@ -119,11 +95,11 @@ class App(Cmd):
         """Callback when reader type changes"""
         self.reader = new
         if new == "stdin":
-            self.poutput("📝 Reader set to STDIN mode.")
+            self.poutput("Reader set to STDIN mode.")
             self.poutput("   You will be prompted to enter training data during classification.")
             self.poutput("   Type 'help_stdin' for detailed usage instructions.")
         else:
-            self.poutput("📁 Reader set to FILE mode.")
+            self.poutput("Reader set to FILE mode.")
             self.poutput("   Configure 'dataset' parameter to specify the CSV file path.")
         
     def do_classify(self,args):
@@ -134,15 +110,15 @@ class App(Cmd):
         if self.voter is None:
             self.voter = "unweighted"
             self.pwarning("Voting mechanism not configured. Defaulting to unweighted voting.")
-        if self.k is None:
-            self.k = 3
-            self.pwarning("Number of neighbours not configured. Defaulting to 3")
         
         # Handle reader mode configuration
         if self.reader == "stdin":
             self.poutput("=== STDIN Mode Active ===")
             self.poutput("You will be prompted to enter training data in CSV format,")
             self.poutput("then select target and features, and finally provide test data for prediction.")
+            if self.k is None:
+                self.k = 3
+                self.pwarning("Number of neighbours not configured. Defaulting to 3 for STDIN mode")
         else:
             if self.test_rate is None:
                 self.test_rate = 0.3
@@ -187,36 +163,61 @@ class App(Cmd):
             self.knn.set_y_train(y)
             
             self.poutput(f"Model trained with {len(X)} samples using {len(features)} features.")
+            self.poutput(f"Using k={self.k} (manually configured for STDIN mode)")
+            
+            # Enable verbose output and set k
+            self.knn.set_verbose(True).set_k(self.k)
             
             # Get test data from user input
             test_data = self.data_handler.read_test_data_from_stdin(features)
             
             if not test_data.empty:
-                # Predict using the trained model
-                prediction = self.knn.predict(test_data)
-                self.poutput(f"\n🎯 Predicted label: {prediction.iloc[0]}")
+                # Predict using the trained model with verbose output
+                prediction = self.knn.predict(test_data, verbose=True, is_stdin_mode=True)
+                self.poutput(f"\nFinal Predicted label: {prediction.iloc[0]}")
                 self.poutput("\nYou can use the 'predict' command to make additional predictions.")
             else:
                 self.poutput("No test data provided.")
         else:
-            # For file mode, split data and show classification report
+            # For file mode, split data, auto-calculate k, and show classification report
             self.data_handler.split_df(df = df, features=features, target_label=target, test_size= self.test_rate)
+            
+            # Auto-calculate k for file mode
+            training_size = len(self.data_handler.X_train)
+            auto_k = self.knn.calculate_auto_k(training_size)
+            
+            if self.k is None:
+                self.k = auto_k
+                self.poutput(f"Auto-calculated k = {auto_k} (closest odd number to 10% of {training_size} training samples)")
+            else:
+                self.poutput(f"Using manually configured k = {self.k}")
+                self.poutput(f"Auto-calculated k would be {auto_k} (closest odd number to 10% of {training_size} training samples)")
+            
             self.knn.set_X_train(self.data_handler.X_train)
             self.knn.set_y_train(self.data_handler.y_train)
-            self.knn.classify(self.data_handler.X_test,self.data_handler.y_test)
+            self.knn.set_verbose(True).set_k(self.k)
+            
+            self.poutput(f"\nStarting classification with detailed intermediate results...")
+            self.poutput(f"Showing detailed results for first 10 test samples (FILE mode)")
+            
+            self.knn.classify(self.data_handler.X_test, self.data_handler.y_test, verbose=True, is_stdin_mode=False)
+            
+            self.poutput(f"\nFinal Results:")
+            self.poutput("Confusion Matrix:")
             self.poutput(self.knn.cm)
+            self.poutput("\nClassification Report:")
             self.poutput(self.knn.report)
     
     def do_predict(self, args):
         "Predict a single instance using trained model (for stdin input mode)"
         if self.reader == "file":
-            self.poutput("❌ This command is only available when reader is set to 'stdin'")
-            self.poutput("   Current reader mode: file")
-            self.poutput("   To use prediction mode: set reader stdin")
+            self.poutput("This command is only available when reader is set to 'stdin'")
+            self.poutput("Current reader mode: file")
+            self.poutput("To use prediction mode: set reader stdin")
             return
             
         if not hasattr(self.knn, 'X_train') or self.knn.X_train is None:
-            self.poutput("❌ Model not trained. Please run 'classify' first to train the model.")
+            self.poutput("Model not trained. Please run 'classify' first to train the model.")
             return
             
         # Get the features from the trained model
@@ -227,9 +228,10 @@ class App(Cmd):
         test_data = self.data_handler.read_test_data_from_stdin(features)
         
         if not test_data.empty:
-            # Predict using the trained model
-            prediction = self.knn.predict(test_data)
-            self.poutput(f"\n🎯 Predicted label: {prediction.iloc[0]}")
+            # Predict using the trained model with verbose output
+            self.knn.set_verbose(True)
+            prediction = self.knn.predict(test_data, verbose=True, is_stdin_mode=True)
+            self.poutput(f"\nFinal Predicted label: {prediction.iloc[0]}")
         else:
             self.poutput("No test data provided.")
 def main():

@@ -1,35 +1,30 @@
-# KNN Classifier Shell - Enhanced STDIN Implementation
+# KNN Classifier Shell - Enhanced Implementation with Verbose Output
 
-This document describes the **improved** stdin input functionality for the KNN Classifier shell application. The new implementation provides a much more user-friendly and interactive experience.
+This document describes the **enhanced** KNN Classifier shell application with comprehensive intermediate result display and automatic k-calculation.
 
 ## 🆕 New Features
 
-### 1. Interactive Training Data Input
+### 1. 🔍 Detailed Intermediate Results Display
 
-- **No more piping required**: Users no longer need to pipe CSV files at startup
-- **Step-by-step prompts**: Clear instructions guide users through CSV data entry
-- **Built-in validation**: Automatic error checking and format validation
-- **Simple termination**: Type 'END' to finish data input
+- **Verbose distance calculations**: Shows distance computations for each test sample
+- **Top k neighbors visualization**: Displays rankings, distances, and labels of nearest neighbors
+- **Weight calculations**: Shows individual weights for weighted voting or vote counts for unweighted
+- **Step-by-step voting breakdown**: Complete analysis of the voting process
+- **Mode-specific output**: Different detail levels for file vs stdin modes
 
-### 2. Enhanced User Guidance
+### 2. 📊 Automatic K Calculation (File Mode)
 
-- **Comprehensive help system**: New `help_stdin` and `help_modes` commands
-- **Real-time feedback**: Immediate guidance when settings change
-- **Visual indicators**: Emojis and clear formatting for better readability
-- **Mode-specific prompts**: Different behavior for file vs stdin modes
+- **Smart k selection**: Automatically calculates k as closest odd number to 10% of training data
+- **Optimal scaling**: k scales appropriately with dataset size
+- **Tie prevention**: Always uses odd k to avoid voting ties
+- **Manual override**: Still allows explicit k configuration when desired
 
-### 3. Improved Test Data Input
+### 3. 🎯 Enhanced User Experience
 
-- **Better prompts**: Clear instructions for each feature input
-- **Type conversion**: Automatic handling of numeric vs text data
-- **Validation**: Input validation with retry on errors
-- **User feedback**: Confirmation of entered data
-
-### 4. Streamlined Workflow
-
-- **Single command entry point**: Just run the shell, no special startup required
-- **Interactive configuration**: Set reader mode and see immediate feedback
-- **Seamless prediction**: Easy additional predictions with the `predict` command
+- **Visual formatting**: Clear tables, emojis, and structured output
+- **Comprehensive help**: Updated help commands with new feature descriptions
+- **Real-time feedback**: Shows model configuration and data statistics
+- **Educational output**: Learn how KNN works through detailed breakdowns
 
 ## Code Changes
 
@@ -52,9 +47,31 @@ This document describes the **improved** stdin input functionality for the KNN C
 - Enhanced `do_classify()` to handle both file and stdin modes
 - Added `do_predict()` command for additional predictions in stdin mode
 
-## 🚀 New Workflow
+## 🚀 Enhanced Workflow Examples
 
-### Simple STDIN Mode Usage
+### File Mode with Auto K-Calculation
+
+```bash
+# 1. Start the shell
+python -m src.knn.shell.main
+
+# 2. Configure for file mode
+(KNN) >> set reader file
+(KNN) >> set dataset diabetes.csv
+(KNN) >> set distance euclidean
+(KNN) >> set voter weighted
+# Note: k will be auto-calculated!
+
+# 3. Run classification with verbose output
+(KNN) >> classify
+# → Auto-calculates k (e.g., k=53 for 537 training samples)
+# → Shows detailed results for first 10 test samples
+# → Displays distance calculations, top k neighbors, weights
+# → Shows voting breakdown and final predictions
+# → Displays confusion matrix and classification report
+```
+
+### STDIN Mode with Full Verbose Output
 
 ```bash
 # 1. Start the shell
@@ -62,64 +79,120 @@ python -m src.knn.shell.main
 
 # 2. Configure for stdin mode
 (KNN) >> set reader stdin
-(KNN) >> set k 5                    # Optional: set parameters
-(KNN) >> set distance euclidean     # Optional
-(KNN) >> set voter weighted         # Optional
+(KNN) >> set k 5                    # Manual k for stdin mode
+(KNN) >> set distance manhattan
+(KNN) >> set voter weighted
 
-# 3. Run classification with interactive input
+# 3. Interactive data input and prediction
 (KNN) >> classify
-# Follow the prompts to:
-# - Enter training data in CSV format
-# - Select target column and features
-# - Enter test data for prediction
+# → Enter training data in CSV format
+# → Select target column and features
+# → Enter test data for prediction
+# → Shows detailed results for ALL test samples
+# → Complete voting analysis for each prediction
 
-# 4. Make additional predictions
+# 4. Additional predictions
 (KNN) >> predict
-# Enter new test data when prompted
-
-# 5. Get help anytime
-(KNN) >> help_stdin     # Detailed stdin usage guide
-(KNN) >> help_modes     # Compare file vs stdin modes
+# → Enter new test data
+# → Full verbose output for the prediction
 ```
 
-### Training Data Input Example
+## 🔍 Verbose Output Features
 
-When you run `classify` in stdin mode, you'll see:
+### Distance Calculations Display
 
-```
-=== Training Data Input ===
-Please enter your training data in CSV format.
-Instructions:
-1. First line should contain column headers (comma-separated)
-2. Following lines should contain data rows (comma-separated)
-3. Press Enter after each line
-4. Type 'END' on a new line when finished
-
-Example:
-feature1,feature2,target
-1.2,3.4,class_a
-2.1,4.3,class_b
-END
-
-Enter your CSV data now:
-sepal_length,sepal_width,petal_length,petal_width,species
-5.1,3.5,1.4,0.2,setosa
-4.9,3.0,1.4,0.2,setosa
-6.4,3.2,4.5,1.5,versicolor
-6.9,3.1,4.9,1.5,versicolor
-END
+```text
+📏 Distance Calculations:
+Index    Distance     Features                       Label
+----------------------------------------------------------------------
+23       0.2828       {'feature1': 5.0, 'feature2'... setosa
+45       0.4243       {'feature1': 5.4, 'feature2'... setosa
+67       0.5657       {'feature1': 4.8, 'feature2'... setosa
+...
 ```
 
-## 📊 Configuration Options
+### Top K Neighbors Visualization
 
-| Setting   | Options                         | Default        | Description                       |
-| --------- | ------------------------------- | -------------- | --------------------------------- |
-| reader    | **stdin**, file                 | file           | Input mode for training data      |
-| k         | integer                         | 3              | Number of neighbors               |
-| distance  | euclidean, manhattan, chebyshev | euclidean      | Distance metric                   |
-| voter     | weighted, unweighted            | unweighted     | Voting strategy                   |
-| test_rate | 0.0-1.0                         | 0.3            | Test split ratio (file mode only) |
-| dataset   | path                            | ./diabetes.csv | Dataset path (file mode only)     |
+```text
+🏆 Top 5 Nearest Neighbors:
+Rank   Index    Distance     Label           Weight
+-----------------------------------------------------------------
+1      23       0.2828       setosa          12.5000
+2      45       0.4243       setosa          5.5556
+3      67       0.5657       setosa          3.1250
+4      89       0.7071       versicolor      2.0000
+5      12       0.8485       setosa          1.3889
+```
+
+### Voting Breakdown Analysis
+
+````text
+🗳️  Voting Breakdown:
+📊 Weighted Voting Results:
+Label           Total Weight     Votes
+---------------------------------------------
+setosa          22.5695         4
+versicolor      2.0000          1
+
+🎯 Predicted Label: setosa
+```## 📊 Automatic K Calculation
+
+### How It Works
+
+In **file mode**, the system automatically calculates the optimal k value:
+
+- **Formula**: k = closest odd number to (training_size × 0.1)
+- **Range**: Ensures k is between 1 and training_size
+- **Odd constraint**: Always uses odd k to prevent voting ties
+
+### Examples
+
+| Training Size | 10% of Size | Auto K | Reasoning |
+|---------------|-------------|--------|-----------|
+| 50 samples    | 5.0         | 5      | 5 is already odd |
+| 100 samples   | 10.0        | 9      | Closest odd to 10 |
+| 150 samples   | 15.0        | 15     | 15 is already odd |
+| 200 samples   | 20.0        | 19     | Closest odd to 20 |
+| 537 samples   | 53.7        | 53     | Closest odd to 53.7 |
+
+### Benefits
+
+- **Optimal scaling**: k grows with dataset size
+- **Prevents overfitting**: Avoids k=1 (too specific)
+- **Prevents underfitting**: Avoids k=training_size (too general)
+- **No ties**: Odd k ensures clear majority votes
+- **No tuning needed**: Works well out-of-the-box
+
+## 📋 Configuration Comparison
+
+| Setting   | File Mode                       | STDIN Mode              |
+| --------- | ------------------------------- | ----------------------- |
+| k         | **Auto-calculated** (10% rule)  | Manual (default: 3)     |
+| Verbose   | First 10 test samples           | ALL test samples        |
+| Output    | Confusion matrix + report       | Single predictions      |
+| Data      | CSV file                        | Interactive input       |
+| Use Case  | Model evaluation                | Real-time prediction    |
+
+## 💡 Key Improvements Summary
+
+### 🔍 Verbose Output Features
+- Distance calculations for each test sample
+- Top k neighbors with rankings and distances
+- Individual weights (weighted) or vote counts (unweighted)
+- Step-by-step voting process breakdown
+- Model configuration and data statistics
+
+### 📊 Smart K Selection
+- Automatic calculation for file mode
+- Scales optimally with dataset size
+- Always uses odd k to prevent ties
+- Manual override still available
+
+### 🎯 Enhanced User Experience
+- Clear visual formatting with tables and emojis
+- Educational output showing how KNN works
+- Mode-specific optimizations
+- Comprehensive help system
 
 ## 🔄 Mode Comparison
 
@@ -145,7 +218,7 @@ Run the test and verification scripts:
 ```bash
 python test_improved_stdin.py
 python verify_improvements.py
-```
+````
 
 ## 🆚 Before vs After
 
